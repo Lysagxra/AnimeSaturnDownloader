@@ -40,22 +40,22 @@ project-root/
    ```bash
    pip install -r requirements.txt
 
-## Single Hanime Download
+## Single Anime Download
 
-To download a single hanime, you can use the `anime_downloader.py` script.
+To download a single anime, you can use the `anime_downloader.py` script.
 
 ### Usage
 
-Run the script followed by the hanime URL you want download:
+Run the script followed by the anime URL you want download:
 
 ```bash
-python3 hanime_downloader.py <hanime_page_url>
+python3 anime_downloader.py <anime_page_url>
 ```
 
 Example
 
 ```
-python3 hanime_downloader.py https://www.animesaturn.cx/anime/Orb-On-the-Movements-of-the-Earth
+python3 anime_downloader.py https://www.animesaturn.cx/anime/Orb-On-the-Movements-of-the-Earth
 ```
 
 ## Batch Download
