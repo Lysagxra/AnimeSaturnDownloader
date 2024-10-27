@@ -21,6 +21,7 @@ Usage:
 import os
 import sys
 import re
+from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 from rich.progress import (
@@ -104,13 +105,13 @@ def extract_anime_id(url):
         ValueError: If the URL format is invalid.
     """
     try:
-        anime_id = url.split('/')[-1]
+        parsed_url = urlparse(url)
+        anime_id = parsed_url.path.split('/')[-1]
 
         if ends_with_pattern(anime_id):
             anime_id = remove_pattern(anime_id)
 
-        host_page = url.split('/')[-3]
-        domain = host_page.split('.')[-1]
+        domain = parsed_url.netloc.split('.')[-1]
         return anime_id, domain
 
     except IndexError:
