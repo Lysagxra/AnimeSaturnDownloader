@@ -25,19 +25,16 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
 import requests
 from bs4 import BeautifulSoup
-
 from rich.live import Live
-from rich.panel import Panel
-from rich.table import Table
-from rich.progress import (
-    Progress, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
-)
 
 from helpers.streamtape2curl import get_curl_command as get_alt_download_link
+from helpers.progress_utils import create_progress_bar, create_progress_table
 
 SCRIPT_NAME = os.path.basename(__file__)
 DOWNLOAD_FOLDER = "Downloads"
+
 CHUNK_SIZE = 8192
+MAX_WORKERS = 3
 
 PATTERN = r"-a+$"
 ENDSTRINGS = ["Sub ITA", "ITA"]
@@ -271,26 +268,31 @@ def download_episode(
         download_link, download_path, task_info, is_default_host=True
 ):
     """
-    Downloads an episode from the specified link and provides progress updates.
+    Downloads an episode from the specified link and provides real-time
+    progress updates.
 
     Args:
-        index (int): The index of the episode (0-based).
-        num_episodes (int): The total number of episodes available.
         download_link (str): The URL from which to download the episode.
-        download_path (str): The directory path where the episode file will be
-                             saved.
-        is_default_host (bool): Indicates whether the default host is being
-                                used. Defaults to True.
+        download_path (str): The directory path where the episode file will
+                             be saved.
+        task_info (tuple): A tuple containing progress tracking information:
+            - job_progress: The progress bar object.
+            - task: The specific task being tracked.
+            - overall_task: The overall progress task being updated.
+        is_default_host (bool): Indicates whether the default host is being used.
+                                Defaults to True. Affects the file-saving path.
 
     Prints:
-        Progress messages during the download process.
+        Progress messages during the download process, updating the user on the
+        completion percentage of the episode download.
 
     Raises:
-        requests.RequestException: If there is an error with the HTTP request.
+        requests.RequestException: If there is an error with the HTTP request,
+                                   such as connectivity issues or invalid URLs.
         OSError: If there is an error with file operations, such as writing to
-                 disk.
+                 disk or permission issues.
         ValueError: If the content-length is invalid or not provided in the
-                    response headers.
+                    response headers, which prevents accurate progress tracking.
     """
     def save_file_with_progress(response, final_path, file_size, task_info):
         (job_progress, task, overall_task) = task_info
@@ -358,21 +360,25 @@ def get_alt_video_url(url):
     except IndexError as indx_err:
         print(f"Error finding alternative video URL: {indx_err}")
 
-def download_from_alt_host(url, download_path, job_progress, task, overall_task):
+def download_from_alt_host(
+        url, download_path, job_progress, task, overall_task
+):
     """
     Downloads a video from an alternative host by retrieving the alternative
-    video URL, generating a cURL command, and downloading the episode to the
-    specified path.
+    video URL and downloading the episode to the specified path.
 
     Args:
         url (str): The original video URL to be processed.
-        index (int): The index of the episode to be downloaded.
-        num_episodes (int): The total number of episodes to be downloaded.
         download_path (str): The directory path where the episode should be
                              downloaded.
+        job_progress: The progress bar object used to track download progress.
+        task: The specific task being tracked for this download.
+        overall_task: The overall progress task being updated during the
+                      download process.
 
     Raises:
-        ValueError: If the alternative video URL cannot be retrieved.
+        ValueError: If the alternative video URL cannot be retrieved or is
+                     invalid.
     """
     alt_video_url = get_alt_video_url(url)
 
@@ -391,15 +397,17 @@ def process_video_url(
         url, download_path, job_progress, task, overall_task
 ):
     """
-    Processes a video URL to extract and download its associated files.
-    If no source links are found, it attempts to download from an alternative
-    host.
+    Processes a video URL to extract the video source and download its
+    associated files. If no source links are found, it attempts to
+    download from an alternative host.
 
     Args:
-        url (str): The video URL.
-        index (int): The index of the episode.
-        num_episodes (int): The total number of episodes.
-        download_path (str): The path to save the downloaded episode.
+        url (str): The video URL to be processed.
+        download_path (str): The path where the downloaded episode will be saved.
+        job_progress: The progress bar object for tracking download progress.
+        task: The specific task being tracked for this download.
+        overall_task: The overall progress task being updated during the
+                      download process.
 
     Raises:
         requests.RequestException: If there is an error with the HTTP request
@@ -427,17 +435,35 @@ def process_video_url(
         print(f"Error processing video URL {url}: {req_err}")
 
 def download_anime(anime_name, video_urls, download_path):
+    """
+    Concurrently downloads episodes of a specified anime from provided video
+    URLs and tracks the download progress in real-time.
+
+    Parameters:
+        anime_name (str): The name of the anime being downloaded.
+        video_urls (list): A list of URLs corresponding to each episode to be
+                           downloaded.
+        download_path (str): The local directory path where the downloaded
+                             episodes will be saved.
+
+    Usage:
+        This function initializes a progress bar to display the download
+        status of each episode and updates the overall progress as episodes
+        are downloaded.
+    """
     job_progress = create_progress_bar()
     progress_table = create_progress_table(anime_name, job_progress)
     num_episodes = len(video_urls)
 
     with Live(progress_table, refresh_per_second=10):
         futures = {}
-        with ThreadPoolExecutor(max_workers=3) as executor:
+
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             overall_task = job_progress.add_task(
                 f"[cyan]Progress",
                 total=num_episodes, visible=True
             )
+
             for i, video_url in enumerate(video_urls):
                 task = job_progress.add_task(
                     f"[cyan]Episode {i + 1}/{num_episodes}",
@@ -492,34 +518,6 @@ def fetch_anime_page(url):
     except requests.RequestException as req_err:
         print(f"Error fetching the anime page: {req_err}")
         sys.exit(1)
-
-def create_progress_bar():
-    """
-    Creates and returns a progress bar for tracking download progress.
-
-    Returns:
-        Progress: A Progress object configured with relevant columns.
-    """
-    return Progress(
-        "{task.description}",
-        SpinnerColumn(),
-        BarColumn(),
-        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        '-',
-        TimeRemainingColumn()
-    )
-
-def create_progress_table(anime_name, job_progress):
-    progress_table = Table.grid()
-    progress_table.add_row(
-        Panel.fit(
-            job_progress,
-            title=f"{anime_name}",
-            border_style="red",
-            padding=(1, 1)
-        )
-    )
-    return progress_table
 
 def process_anime_download(url):
     """
