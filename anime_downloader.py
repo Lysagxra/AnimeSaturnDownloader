@@ -21,7 +21,6 @@ Usage:
 import os
 import sys
 import re
-from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
 import requests
 from bs4 import BeautifulSoup
@@ -29,15 +28,15 @@ from rich.live import Live
 
 from helpers.streamtape2curl import get_curl_command as get_alt_download_link
 from helpers.progress_utils import create_progress_bar, create_progress_table
+from helpers.formatting_utils import (
+    extract_anime_id, extract_anime_name, format_anime_name
+)
 
 SCRIPT_NAME = os.path.basename(__file__)
 DOWNLOAD_FOLDER = "Downloads"
 
 CHUNK_SIZE = 8192
 MAX_WORKERS = 3
-
-PATTERN = r"-a+$"
-ENDSTRINGS = ["Sub ITA", "ITA"]
 WATCH_STR = "watch?file="
 
 COLORS = {
@@ -59,113 +58,6 @@ HEADERS = {
         "Gecko/20100101 Firefox/117.0"
     )
 }
-
-def ends_with_pattern(main_string):
-    """
-    Check if a string ends with the pattern "-a...a", where 'a...' means one or
-    more 'a' characters.
-
-    Args:
-        main_string (str): The string to check.
-
-    Returns:
-        bool: True if the string ends with the pattern, False otherwise.
-    """
-    match = re.search(PATTERN, main_string)
-    return match is not None
-
-def remove_pattern(main_string):
-    """
-    Remove the substring of the type "-a...a" from the end of a main string.
-
-    Args:
-        main_string (str): The string from which to remove the substring.
-
-    Returns:
-        str: The string with the specified substring removed from the end.
-    """
-    return re.sub(PATTERN, '', main_string)
-
-def extract_anime_id(url):
-    """
-    Extracts the Anime ID from the provided URL and determines the domain of
-    the host page.
-
-    Args:
-        url (str): The URL of the anime page.
-
-    Returns:
-        tuple: A tuple containing the Anime ID and domain.
-
-    Raises:
-        ValueError: If the URL format is invalid.
-    """
-    try:
-        parsed_url = urlparse(url)
-        anime_id = parsed_url.path.split('/')[-1]
-
-        if ends_with_pattern(anime_id):
-            anime_id = remove_pattern(anime_id)
-
-        domain = parsed_url.netloc.split('.')[-1]
-        return anime_id, domain
-
-    except IndexError:
-        raise ValueError("Invalid URL format.")
-
-def extract_anime_name(soup):
-    """
-    Extracts the anime name from a BeautifulSoup object.
-
-    Args:
-        soup (BeautifulSoup): A BeautifulSoup object representing the parsed
-                              HTML content.
-
-    Returns:
-        tuple: A tuple containing the Anime ID and domain.
-
-    Raises:
-        ValueError: If the container with the specified class is not found in
-                    the BeautifulSoup object.
-        AttributeError: If there is an error extracting the anime name.
-    """
-    try:
-        container = soup.find(
-            'div', {'class': "container anime-title-as mb-3 w-100"}
-        )
-
-        if container is None:
-            raise ValueError("Anime title container not found.")
-
-        return container.find('b').get_text()
-
-    except AttributeError as attr_err:
-        return AttributeError(f"Error extracting anime name: {attr_err}")
-
-def format_anime_name(anime_name):
-    """
-    Formats the Anime name by removing specific substrings at the end.
-
-    Args:
-        anime_name (str): The Anime name extracted from the page.
-
-    Returns:
-        str: The formatted Anime name.
-
-    Raises:
-        ValueError: If the Anime name format is invalid.
-    """
-    def remove_substrings_at_end(string, substrings):
-        for substring in substrings:
-            if string.endswith(substring):
-                return string[:-len(substring)]
-        return string
-
-    try:
-        return remove_substrings_at_end(anime_name, ENDSTRINGS)
-
-    except IndexError:
-        raise ValueError("Invalid Anime name format.")
 
 def get_episode_urls(soup, match, watch_url=False):
     """
@@ -194,7 +86,7 @@ def get_episode_urls(soup, match, watch_url=False):
     filtered_links = list(filter(lambda link: match in link['href'], links))
     return filtered_links[0].get('href')
 
-def get_video_urls(episode_urls, match):
+def get_video_urls(episode_urls, match=WATCH_STR):
     """
     Retrieves video URLs from a list of episode URLs.
 
@@ -291,8 +183,6 @@ def download_episode(
                                    such as connectivity issues or invalid URLs.
         OSError: If there is an error with file operations, such as writing to
                  disk or permission issues.
-        ValueError: If the content-length is invalid or not provided in the
-                    response headers, which prevents accurate progress tracking.
     """
     def save_file_with_progress(response, final_path, file_size, task_info):
         (job_progress, task, overall_task) = task_info
@@ -360,9 +250,7 @@ def get_alt_video_url(url):
     except IndexError as indx_err:
         print(f"Error finding alternative video URL: {indx_err}")
 
-def download_from_alt_host(
-        url, download_path, job_progress, task, overall_task
-):
+def download_from_alt_host(url, download_path, task_info):
     """
     Downloads a video from an alternative host by retrieving the alternative
     video URL and downloading the episode to the specified path.
@@ -371,10 +259,7 @@ def download_from_alt_host(
         url (str): The original video URL to be processed.
         download_path (str): The directory path where the episode should be
                              downloaded.
-        job_progress: The progress bar object used to track download progress.
-        task: The specific task being tracked for this download.
-        overall_task: The overall progress task being updated during the
-                      download process.
+        task_info (tuple): A tuple containing progress tracking information.
 
     Raises:
         ValueError: If the alternative video URL cannot be retrieved or is
@@ -387,15 +272,11 @@ def download_from_alt_host(
 
     (alt_filename, alt_download_link) = get_alt_download_link(alt_video_url)
     alt_download_path = os.path.join(download_path, alt_filename)
-    task_info = (job_progress, task, overall_task)
     download_episode(
-        alt_download_link, alt_download_path, task_info,
-        is_default_host=False
+        alt_download_link, alt_download_path, task_info, is_default_host=False
     )
 
-def process_video_url(
-        url, download_path, job_progress, task, overall_task
-):
+def process_video_url(url, download_path, task_info):
     """
     Processes a video URL to extract the video source and download its
     associated files. If no source links are found, it attempts to
@@ -404,10 +285,7 @@ def process_video_url(
     Args:
         url (str): The video URL to be processed.
         download_path (str): The path where the downloaded episode will be saved.
-        job_progress: The progress bar object for tracking download progress.
-        task: The specific task being tracked for this download.
-        overall_task: The overall progress task being updated during the
-                      download process.
+        task_info (tuple): A tuple containing progress tracking information.
 
     Raises:
         requests.RequestException: If there is an error with the HTTP request
@@ -422,14 +300,9 @@ def process_video_url(
 
         if video_source:
             download_link = extract_download_link(video_source)
-            task_info = (job_progress, task, overall_task)
-            download_episode(
-                download_link, download_path, task_info
-            )
+            download_episode(download_link, download_path, task_info)
         else:
-            download_from_alt_host(
-                url, download_path, job_progress, task, overall_task
-            )
+            download_from_alt_host(url, download_path, task_info)
 
     except requests.RequestException as req_err:
         print(f"Error processing video URL {url}: {req_err}")
@@ -469,9 +342,9 @@ def download_anime(anime_name, video_urls, download_path):
                     f"[cyan]Episode {i + 1}/{num_episodes}",
                     total=100, visible=False
                 )
+                task_info = (job_progress, task, overall_task)
                 future = executor.submit(
-                    process_video_url, video_url,
-                    download_path, job_progress, task, overall_task
+                    process_video_url, video_url, download_path, task_info
                 )
                 futures[future] = task
 
@@ -545,7 +418,7 @@ def process_anime_download(url):
 
         episode_urls = get_episode_urls(soup, anime_id)
 
-        video_urls = get_video_urls(episode_urls, WATCH_STR)
+        video_urls = get_video_urls(episode_urls)
         download_anime(anime_name, video_urls, download_path)
 
     except ValueError as val_err:
