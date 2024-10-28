@@ -1,6 +1,6 @@
 """
 This module provides functionality to read URLs from a file, process
-them for downloading Hanime content, and write results back to the file.
+them for downloading Anime content, and write results back to the file.
 
 Usage:
     To use this module, ensure that 'URLs.txt' is present in the same
@@ -56,7 +56,6 @@ def main():
     """
     urls = read_file(FILE)
     process_urls(urls)
-
     write_file(FILE)
 
 if __name__ == '__main__':
