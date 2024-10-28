@@ -2,7 +2,7 @@
 
 > A Python-based tool to download anime series from AnimeSaturn, tracking progress for each episode. It extracts video URLs and handles downloads efficiently.
 
-![Screenshot](https://github.com/Lysagxra/SimpleAnimeSaturnDownloader/blob/f178abf8466a4757c765c623aaf1ebf06d492c77/misc/Screenshot.png)
+![Screenshot](https://github.com/Lysagxra/SimpleAnimeSaturnDownloader/blob/e7dd37df5b889e0788257db992995b4892fc6942/misc/ScreenshotV2.png)
 
 ## Features
 
