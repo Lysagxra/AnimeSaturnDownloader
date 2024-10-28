@@ -268,8 +268,7 @@ def get_episode_file_name(episode_download_link):
         print(f"Error while extracting the file name: {indx_err}")
 
 def download_episode(
-        download_link, download_path, job_progress, task,
-        overall_task, is_default_host=True
+        download_link, download_path, task_info, is_default_host=True
 ):
     """
     Downloads an episode from the specified link and provides progress updates.
@@ -293,14 +292,8 @@ def download_episode(
         ValueError: If the content-length is invalid or not provided in the
                     response headers.
     """
-    try:
-        response = requests.get(download_link, stream=True, headers=HEADERS)
-        response.raise_for_status()
-
-        file_name = get_episode_file_name(download_link)
-        final_path = os.path.join(download_path, file_name) \
-            if is_default_host else download_path
-        file_size = int(response.headers.get('content-length', -1))
+    def save_file_with_progress(response, final_path, file_size, task_info):
+        (job_progress, task, overall_task) = task_info
         total_downloaded = 0
 
         with open(final_path, 'wb') as file:
@@ -313,6 +306,16 @@ def download_episode(
 
         job_progress.update(task, completed=100, visible=False)
         job_progress.advance(overall_task)
+
+    try:
+        response = requests.get(download_link, stream=True, headers=HEADERS)
+        response.raise_for_status()
+
+        file_name = get_episode_file_name(download_link)
+        final_path = os.path.join(download_path, file_name) \
+            if is_default_host else download_path
+        file_size = int(response.headers.get('content-length', -1))
+        save_file_with_progress(response, final_path, file_size, task_info)
 
     except requests.RequestException as req_error:
         print(f"HTTP request failed: {req_error}")
@@ -378,8 +381,9 @@ def download_from_alt_host(url, download_path, job_progress, task, overall_task)
 
     (alt_filename, alt_download_link) = get_alt_download_link(alt_video_url)
     alt_download_path = os.path.join(download_path, alt_filename)
+    task_info = (job_progress, task, overall_task)
     download_episode(
-        alt_download_link, alt_download_path, job_progress, task, overall_task,
+        alt_download_link, alt_download_path, task_info,
         is_default_host=False
     )
 
@@ -410,8 +414,9 @@ def process_video_url(
 
         if video_source:
             download_link = extract_download_link(video_source)
+            task_info = (job_progress, task, overall_task)
             download_episode(
-                download_link, download_path, job_progress, task, overall_task
+                download_link, download_path, task_info
             )
         else:
             download_from_alt_host(
