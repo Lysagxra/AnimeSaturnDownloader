@@ -1,4 +1,4 @@
-# Simple AnimeSaturn Downloader
+# AnimeSaturn Downloader
 
 > A Python-based tool to download anime series from AnimeSaturn, tracking progress for each episode. It extracts video URLs and handles downloads efficiently.
 
@@ -35,11 +35,11 @@ project-root/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Lysagxra/SimpleAnimeSaturnDownloader.git
+   git clone https://github.com/Lysagxra/AnimeSaturnDownloader.git
 
 2. Navigate to the project directory:
    ```bash
-   cd SimpleAnimeSaturnDownloader
+   cd AnimeSaturnDownloader
 
 3. Install the required dependencies:
    ```bash
