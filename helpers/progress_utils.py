@@ -1,3 +1,10 @@
+"""
+This module provides utility functions for tracking download progress
+using the Rich library. It includes features for creating a progress bar
+and a formatted progress table specifically designed for monitoring
+the download status of anime episodes.
+"""
+
 from rich.panel import Panel
 from rich.table import Table
 from rich.progress import (
