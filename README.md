@@ -18,8 +18,8 @@ project-root/
 ├── helpers/
 │ ├── formatting_utils.py # Python script containing formatting utility for anime name
 │ ├── progress_utils.py   # Python script containing progress utility
-│ └── streamtape2curl.py  # Python script to extract the download link from the alternative host
-├── anime_downloader.py   # Python script to download the anime episodes
+│ └── streamtape2curl.py  # Module to extract the download link from the alternative host
+├── anime_downloader.py   # Module to download the anime episodes
 ├── main.py               # Main Python script to run the downloader
 └── URLs.txt              # Text file containing album URLs
 ```
