@@ -1,18 +1,22 @@
 # Simple AnimeSaturn Downloader
 
-> A Python-based tool for downloading anime from AnimeSaturn.
+> A Python-based tool to download anime series from AnimeSaturn, tracking progress for each episode. It extracts video URLs and handles downloads efficiently.
 
 ![Screenshot](https://github.com/Lysagxra/SimpleAnimeSaturnDownloader/blob/f178abf8466a4757c765c623aaf1ebf06d492c77/misc/Screenshot.png)
 
 ## Features
 
-- Downloads anime episodes from an AnimeSaturn URL.
+- Downloads multiple episodes concurrently.
 - Supports batch downloading via a list of URLs.
+- Tracks download progress with a progress bar.
+- Supports downloading from alternative hosts if necessary.
+- Automatically creates a directory structure for organized storage.
 
 ## Directory Structure
 ```
 project-root/
 ├── helpers/
+| ├── progress_utils.py   # Python script containing progress utility
 │ └── streamtape2curl.py  # Python script to extract the download link from the alternative host
 ├── anime_downloader.py   # Python script to download the anime episodes
 ├── main.py               # Main Python script to run the downloader
