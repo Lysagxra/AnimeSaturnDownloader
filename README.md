@@ -68,7 +68,7 @@ python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan
 
 ### Usage
 
-1. Create a `URLs.txt` file in the project root and list the hanime URLs you want to download.
+1. Create a `URLs.txt` file in the project root and list the anime URLs you want to download.
 
 2. Run the main script via the command line:
 
