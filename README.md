@@ -13,6 +13,7 @@
 - Automatically creates a directory structure for organized storage.
 
 ## Directory Structure
+
 ```
 project-root/
 ├── helpers/
