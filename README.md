@@ -60,7 +60,7 @@ python3 anime_downloader.py <anime_page_url>
 
 Example
 
-```
+```bash
 python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan
 ```
 
@@ -72,7 +72,7 @@ python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan
 
 2. Run the main script via the command line:
 
-```
+```bash
 python3 main.py
 ```
 
