@@ -20,7 +20,6 @@ Usage:
 
 import os
 import sys
-import re
 from concurrent.futures import ThreadPoolExecutor
 import requests
 from bs4 import BeautifulSoup
@@ -28,7 +27,7 @@ from rich.live import Live
 
 from helpers.streamtape2curl import get_curl_command as get_alt_download_link
 from helpers.progress_utils import create_progress_bar, create_progress_table
-from helpers.formatting_utils import (
+from helpers.format_utils import (
     extract_anime_id, extract_anime_name, format_anime_name
 )
 
@@ -103,7 +102,7 @@ def get_video_urls(episode_urls, match=WATCH_STR):
     """
     def extract_video_url(episode_url):
         try:
-            response = requests.get(episode_url)
+            response = requests.get(episode_url, timeout=10)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -137,7 +136,7 @@ def extract_download_link(video_link):
         return video_link['src']
 
     except KeyError as key_err:
-        raise KeyError(f"Expected attribute not found: {key_err}")
+        raise KeyError(f"Expected attribute not found: {key_err}") from key_err
 
 def get_episode_file_name(episode_download_link):
     """
@@ -149,12 +148,14 @@ def get_episode_file_name(episode_download_link):
     Returns:
         str: The extracted file name, or None if the link is None or empty.
     """
-    try:
-        return episode_download_link.split('/')[-1] \
-            if episode_download_link else None
+    if episode_download_link:
+        try:
+            return episode_download_link.split('/')[-1]
 
-    except IndexError as indx_err:
-        print(f"Error while extracting the file name: {indx_err}")
+        except IndexError as indx_err:
+            print(f"Error while extracting the file name: {indx_err}")
+
+    return None
 
 def download_episode(
         download_link, download_path, task_info, is_default_host=True
@@ -200,7 +201,9 @@ def download_episode(
         job_progress.advance(overall_task)
 
     try:
-        response = requests.get(download_link, stream=True, headers=HEADERS)
+        response = requests.get(
+            download_link, stream=True, headers=HEADERS, timeout=10
+        )
         response.raise_for_status()
 
         file_name = get_episode_file_name(download_link)
@@ -233,7 +236,7 @@ def get_alt_video_url(url):
     alt_url = url + "&server=1"
 
     try:
-        response = requests.get(alt_url)
+        response = requests.get(alt_url, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -249,6 +252,8 @@ def get_alt_video_url(url):
 
     except IndexError as indx_err:
         print(f"Error finding alternative video URL: {indx_err}")
+
+    return None
 
 def download_from_alt_host(url, download_path, task_info):
     """
@@ -292,7 +297,7 @@ def process_video_url(url, download_path, task_info):
                                    while processing the video URL.
     """
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -333,8 +338,7 @@ def download_anime(anime_name, video_urls, download_path):
 
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             overall_task = job_progress.add_task(
-                f"[cyan]Progress",
-                total=num_episodes, visible=True
+                "[cyan]Progress", total=num_episodes, visible=True
             )
 
             for i, video_url in enumerate(video_urls):
@@ -342,9 +346,9 @@ def download_anime(anime_name, video_urls, download_path):
                     f"[cyan]Episode {i + 1}/{num_episodes}",
                     total=100, visible=False
                 )
-                task_info = (job_progress, task, overall_task)
                 future = executor.submit(
-                    process_video_url, video_url, download_path, task_info
+                    process_video_url, video_url, download_path,
+                    (job_progress, task, overall_task)
                 )
                 futures[future] = task
 
@@ -366,6 +370,7 @@ def create_download_directory(download_path):
     """
     try:
         os.makedirs(download_path, exist_ok=True)
+
     except OSError as os_err:
         print(f"Error creating directory: {os_err}")
         sys.exit(1)
@@ -384,7 +389,7 @@ def fetch_anime_page(url):
         requests.RequestException: If there is an error with the HTTP request.
     """
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         return BeautifulSoup(response.text, 'html.parser')
 
