@@ -2,7 +2,7 @@
 
 > A Python-based tool to download anime series from AnimeSaturn, tracking progress for each episode. It extracts video URLs and handles downloads efficiently.
 
-![Screenshot](https://github.com/Lysagxra/SimpleAnimeSaturnDownloader/blob/e7dd37df5b889e0788257db992995b4892fc6942/misc/ScreenshotV2.png)
+![Screenshot](https://github.com/Lysagxra/AnimeSaturnDownloader/blob/8f8cf230cb28bc37d0004bded26d2fcf9344427d/misc/Screenshot.png)
 
 ## Features
 
@@ -61,7 +61,7 @@ python3 anime_downloader.py <anime_page_url>
 Example
 
 ```
-python3 anime_downloader.py https://www.animesaturn.cx/anime/Orb-On-the-Movements-of-the-Earth
+python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan
 ```
 
 ## Batch Download
