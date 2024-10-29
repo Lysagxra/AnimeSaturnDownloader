@@ -34,6 +34,7 @@ from helpers.format_utils import (
 SCRIPT_NAME = os.path.basename(__file__)
 DOWNLOAD_FOLDER = "Downloads"
 
+TIMEOUT = 10
 CHUNK_SIZE = 8192
 MAX_WORKERS = 3
 WATCH_STR = "watch?file="
@@ -102,7 +103,7 @@ def get_video_urls(episode_urls, match=WATCH_STR):
     """
     def extract_video_url(episode_url):
         try:
-            response = requests.get(episode_url, timeout=10)
+            response = requests.get(episode_url, timeout=TIMEOUT)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -202,7 +203,7 @@ def download_episode(
 
     try:
         response = requests.get(
-            download_link, stream=True, headers=HEADERS, timeout=10
+            download_link, stream=True, headers=HEADERS, timeout=TIMEOUT
         )
         response.raise_for_status()
 
@@ -236,7 +237,7 @@ def get_alt_video_url(url):
     alt_url = url + "&server=1"
 
     try:
-        response = requests.get(alt_url, timeout=10)
+        response = requests.get(alt_url, timeout=TIMEOUT)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -297,7 +298,7 @@ def process_video_url(url, download_path, task_info):
                                    while processing the video URL.
     """
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=TIMEOUT)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -389,7 +390,7 @@ def fetch_anime_page(url):
         requests.RequestException: If there is an error with the HTTP request.
     """
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=TIMEOUT)
         response.raise_for_status()
         return BeautifulSoup(response.text, 'html.parser')
 
