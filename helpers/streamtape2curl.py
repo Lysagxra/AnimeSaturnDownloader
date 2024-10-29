@@ -36,7 +36,7 @@ def get_curl_command(url: str) -> tuple:
         tuple: A tuple containing the original title (str) and the
                final URL (str).
     """
-    html = requests.get(url).content.decode()
+    html = requests.get(url, timeout=10).content.decode()
 
     token = re.match(
         NOROBOT_TOKEN_PATTERN, html, re.M|re.S
