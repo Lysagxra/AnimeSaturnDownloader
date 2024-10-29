@@ -5,13 +5,15 @@ and a formatted progress table specifically designed for monitoring
 the download status of anime episodes.
 """
 
+from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
 from rich.progress import (
-    Progress, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
+    Progress, SpinnerColumn, BarColumn,
+    TextColumn, TimeRemainingColumn
 )
 
-def create_progress_bar():
+def create_progress_bar() -> Progress:
     """
     Creates and returns a progress bar for tracking download progress.
 
@@ -23,11 +25,11 @@ def create_progress_bar():
         SpinnerColumn(),
         BarColumn(),
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        '-',
+        "•",
         TimeRemainingColumn()
     )
 
-def create_progress_table(anime_name, job_progress):
+def create_progress_table(anime_name: str, job_progress: Progress) -> Table:
     """
     Creates a formatted progress table for tracking the download status of
     anime episodes.
@@ -42,11 +44,12 @@ def create_progress_table(anime_name, job_progress):
         Table: A rich Table object containing the progress panel for the
                specified anime.
     """
+    title_text = Text(anime_name, style="bold")
     progress_table = Table.grid()
     progress_table.add_row(
         Panel.fit(
             job_progress,
-            title=f"{anime_name}",
+            title=title_text,
             border_style="red",
             padding=(1, 1)
         )
