@@ -2,12 +2,6 @@
 This module provides functionality to extract specific information from the HTML
 content of a given Streamtape URL and constructs a cURL command to download a
 file from the Streamtape website.
-
-Functions:
-    get_curl_command(url: str) -> tuple: Extracts the original title and final
-                                         URL from the given URL's HTML content.
-    main(): Processes URLs provided as command-line arguments and prints cURL
-            commands.
 """
 
 #!/usr/bin/env python
@@ -60,7 +54,7 @@ def main():
     cURL commands to download files from the Streamtape website.
     """
     if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} STREAMTAPE_URL...", file=sys.stderr)
+        print(f"Usage: {sys.argv[0]} <url>...", file=sys.stderr)
         sys.exit(1)
 
     for url in sys.argv[1:]:

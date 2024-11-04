@@ -3,10 +3,6 @@ This module provides utility functions for processing and formatting
 anime-related strings and URLs. It includes functions for checking and
 removing specific patterns from strings, extracting anime IDs from URLs,
 and formatting anime names by removing designated substrings.
-
-Constants:
-- PATTERN: A regex pattern used to identify the "-a...a" format.
-- ENDSTRINGS: A list of substrings to be removed from the end of anime names.
 """
 
 import re
@@ -62,8 +58,8 @@ def extract_anime_id(url):
         if ends_with_pattern(anime_id):
             anime_id = remove_pattern(anime_id)
 
-        domain = parsed_url.netloc.split('.')[-1]
-        return anime_id, domain
+#        domain = parsed_url.netloc.split('.')[-1]
+        return anime_id
 
     except IndexError as indx_err:
         raise ValueError("Invalid URL format.") from indx_err
@@ -99,21 +95,21 @@ def extract_anime_name(soup):
 
 def format_anime_name(anime_name):
     """
-    Formats the Anime name by removing specific substrings at the end.
+    Formats the anime name by removing specific substrings at the end.
 
     Args:
-        anime_name (str): The Anime name extracted from the page.
+        anime_name (str): The anime name extracted from the page.
 
     Returns:
-        str: The formatted Anime name.
+        str: The formatted anime name.
 
     Raises:
-        ValueError: If the Anime name format is invalid.
+        ValueError: If the anime name format is invalid.
     """
     def remove_substrings_at_end(string, substrings):
         for substring in substrings:
             if string.endswith(substring):
-                return string[:-len(substring)]
+                return string[:-len(substring)].strip()
         return string
 
     try:
