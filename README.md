@@ -1,6 +1,6 @@
 # AnimeSaturn Downloader
 
-> A Python-based tool to download anime series from AnimeSaturn, tracking progress for each episode. It extracts video URLs and handles downloads efficiently.
+> A Python-based tool for downloading anime series from AnimeSaturn, featuring progress tracking for each episode. It efficiently extracts video URLs and manages downloads.
 
 ![Screenshot](https://github.com/Lysagxra/AnimeSaturnDownloader/blob/8f8cf230cb28bc37d0004bded26d2fcf9344427d/misc/Screenshot.png)
 
@@ -17,12 +17,13 @@
 ```
 project-root/
 ├── helpers/
-│ ├── format_utils.py     # Python script containing formatting utility for anime name
-│ ├── progress_utils.py   # Python script containing progress utility
-│ └── streamtape2curl.py  # Module to extract the download link from the alternative host
-├── anime_downloader.py   # Module to download the anime episodes
-├── main.py               # Main Python script to run the downloader
-└── URLs.txt              # Text file containing album URLs
+│ ├── download_utils.py   # Script containing utilities for managing the download process
+│ ├── format_utils.py     # Script containing formatting utilities
+│ ├── progress_utils.py   # Script containing utilities for tracking download progress
+│ └── streamtape2curl.py  # Module for extracting download links from alternative hosts
+├── anime_downloader.py   # Module for downloading anime episodes
+├── main.py               # Main script to run the downloader
+└── URLs.txt              # Text file containing anime URLs
 ```
 
 ## Dependencies
@@ -55,7 +56,7 @@ To download a single anime, you can use the `anime_downloader.py` script.
 Run the script followed by the anime URL you want download:
 
 ```bash
-python3 anime_downloader.py <anime_page_url>
+python3 anime_downloader.py <anime_url>
 ```
 
 Example
