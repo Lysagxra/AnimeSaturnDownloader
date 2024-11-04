@@ -8,7 +8,7 @@ Usage:
     content, and clear the URL list upon completion.
 """
 
-from anime_downloader import process_anime_download
+from anime_downloader import process_anime_download, clear_terminal
 
 FILE = 'URLs.txt'
 
@@ -54,6 +54,7 @@ def main():
 
     Reads URLs from a file, processes them, and clears the file at the end.
     """
+    clear_terminal()
     urls = read_file(FILE)
     process_urls(urls)
     write_file(FILE)
