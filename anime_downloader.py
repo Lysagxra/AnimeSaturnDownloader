@@ -4,14 +4,6 @@ This script downloads anime episodes from a given AnimeSaturn URL.
 It extracts the anime ID, formats the anime name, retrieves episode IDs and
 URLs, and downloads each episode.
 
-Dependencies:
-    - requests: For making HTTP requests.
-    - bs4 (BeautifulSoup): For parsing HTML content.
-
-Custom Modules:
-    - streamtape2curl (get_curl_command): For extract the download link from
-                                          the alternative host.
-
 Usage:
     - Run the script with the URL of the anime page as a command-line argument.
     - It will create a directory structure in the 'Downloads' folder based on
@@ -20,37 +12,22 @@ Usage:
 
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor
+
 import requests
 from bs4 import BeautifulSoup
 from rich.live import Live
 
 from helpers.streamtape2curl import get_curl_command as get_alt_download_link
 from helpers.progress_utils import create_progress_bar, create_progress_table
+from helpers.download_utils import save_file_with_progress, run_in_parallel
+
 from helpers.format_utils import (
     extract_anime_id, extract_anime_name, format_anime_name
 )
 
 SCRIPT_NAME = os.path.basename(__file__)
 DOWNLOAD_FOLDER = "Downloads"
-
 TIMEOUT = 10
-CHUNK_SIZE = 8192
-MAX_WORKERS = 3
-WATCH_STR = "watch?file="
-
-COLORS = {
-    'PURPLE': '\033[95m',
-    'CYAN': '\033[96m',
-    'DARKCYAN': '\033[36m',
-    'BLUE': '\033[94m',
-    'GREEN': '\033[92m',
-    'YELLOW': '\033[93m',
-    'RED': '\033[91m',
-    'BOLD': '\033[1m',
-    'UNDERLINE': '\033[4m',
-    'END': '\033[0m'
-}
 
 HEADERS = {
     "User-Agent": (
@@ -86,7 +63,7 @@ def get_episode_urls(soup, match, watch_url=False):
     filtered_links = list(filter(lambda link: match in link['href'], links))
     return filtered_links[0].get('href')
 
-def get_video_urls(episode_urls, match=WATCH_STR):
+def get_video_urls(episode_urls, match="watch?file="):
     """
     Retrieves video URLs from a list of episode URLs.
 
@@ -169,38 +146,14 @@ def download_episode(
         download_link (str): The URL from which to download the episode.
         download_path (str): The directory path where the episode file will
                              be saved.
-        task_info (tuple): A tuple containing progress tracking information:
-            - job_progress: The progress bar object.
-            - task: The specific task being tracked.
-            - overall_task: The overall progress task being updated.
-        is_default_host (bool): Indicates whether the default host is being used.
-                                Defaults to True. Affects the file-saving path.
-
-    Prints:
-        Progress messages during the download process, updating the user on the
-        completion percentage of the episode download.
+        task_info (tuple): A tuple containing progress tracking information.
+        is_default_host (bool): Indicates whether the default host is being
+                                used. Defaults to True.
 
     Raises:
         requests.RequestException: If there is an error with the HTTP request,
                                    such as connectivity issues or invalid URLs.
-        OSError: If there is an error with file operations, such as writing to
-                 disk or permission issues.
     """
-    def save_file_with_progress(response, final_path, file_size, task_info):
-        (job_progress, task, overall_task) = task_info
-        total_downloaded = 0
-
-        with open(final_path, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
-                if chunk:
-                    file.write(chunk)
-                    total_downloaded += len(chunk)
-                    progress_percentage = (total_downloaded / file_size) * 100
-                    job_progress.update(task, completed=progress_percentage)
-
-        job_progress.update(task, completed=100, visible=False)
-        job_progress.advance(overall_task)
-
     try:
         response = requests.get(
             download_link, stream=True, headers=HEADERS, timeout=TIMEOUT
@@ -210,14 +163,10 @@ def download_episode(
         file_name = get_episode_file_name(download_link)
         final_path = os.path.join(download_path, file_name) \
             if is_default_host else download_path
-        file_size = int(response.headers.get('content-length', -1))
-        save_file_with_progress(response, final_path, file_size, task_info)
+        save_file_with_progress(response, final_path, task_info)
 
     except requests.RequestException as req_error:
         print(f"HTTP request failed: {req_error}")
-
-    except OSError as os_error:
-        print(f"File operation failed: {os_error}")
 
 def get_alt_video_url(url):
     """
@@ -318,7 +267,7 @@ def download_anime(anime_name, video_urls, download_path):
     Concurrently downloads episodes of a specified anime from provided video
     URLs and tracks the download progress in real-time.
 
-    Parameters:
+    Args:
         anime_name (str): The name of the anime being downloaded.
         video_urls (list): A list of URLs corresponding to each episode to be
                            downloaded.
@@ -332,45 +281,31 @@ def download_anime(anime_name, video_urls, download_path):
     """
     job_progress = create_progress_bar()
     progress_table = create_progress_table(anime_name, job_progress)
-    num_episodes = len(video_urls)
 
     with Live(progress_table, refresh_per_second=10):
-        futures = {}
+        run_in_parallel(
+            process_video_url, video_urls, job_progress, download_path
+        )
 
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            overall_task = job_progress.add_task(
-                "[cyan]Progress", total=num_episodes, visible=True
-            )
-
-            for i, video_url in enumerate(video_urls):
-                task = job_progress.add_task(
-                    f"[cyan]Episode {i + 1}/{num_episodes}",
-                    total=100, visible=False
-                )
-                future = executor.submit(
-                    process_video_url, video_url, download_path,
-                    (job_progress, task, overall_task)
-                )
-                futures[future] = task
-
-                while futures:
-                    for future_task in list(futures.keys()):
-                        if future_task.running():
-                            task_id = futures.pop(future_task)
-                            job_progress.update(task_id, visible=True)
-
-def create_download_directory(download_path):
+def create_download_directory(anime_name):
     """
     Creates a directory for downloads if it doesn't exist.
 
     Args:
-        download_path (str): The path to create the download directory.
+        anime_name (str): The name of the anime used to create the download 
+                          directory.
+
+    Returns:
+        str: The path to the created download directory.
 
     Raises:
         OSError: If there is an error creating the directory.
     """
+    download_path = os.path.join(DOWNLOAD_FOLDER, anime_name)
+
     try:
         os.makedirs(download_path, exist_ok=True)
+        return download_path
 
     except OSError as os_err:
         print(f"Error creating directory: {os_err}")
@@ -408,27 +343,34 @@ def process_anime_download(url):
     Raises:
         ValueError: If there is an issue extracting the Anime ID or name
                     from the URL or the page content.
-
-    Creates:
-        A directory for the Anime series in the current working directory,
-        where all episodes will be downloaded.
     """
     soup = fetch_anime_page(url)
 
     try:
-        (anime_id, _) = extract_anime_id(url)
+        anime_id = extract_anime_id(url)
         anime_name = format_anime_name(extract_anime_name(soup))
 
-        download_path = os.path.join(os.getcwd(), DOWNLOAD_FOLDER, anime_name)
-        create_download_directory(download_path)
+        download_path = create_download_directory(anime_name)
 
         episode_urls = get_episode_urls(soup, anime_id)
-
         video_urls = get_video_urls(episode_urls)
         download_anime(anime_name, video_urls, download_path)
 
     except ValueError as val_err:
         print(f"Value error: {val_err}")
+
+def clear_terminal():
+    """
+    Clears the terminal screen based on the operating system.
+    """
+    commands = {
+        'nt': 'cls',      # Windows
+        'posix': 'clear'  # macOS and Linux
+    }
+
+    command = commands.get(os.name)
+    if command:
+        os.system(command)
 
 def main():
     """
@@ -441,6 +383,7 @@ def main():
         print(f"Usage: python3 {SCRIPT_NAME} <anime_url>")
         sys.exit(1)
 
+    clear_terminal()
     url = sys.argv[1]
     process_anime_download(url)
 
