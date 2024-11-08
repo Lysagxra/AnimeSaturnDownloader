@@ -39,17 +39,17 @@ def remove_pattern(main_string):
 
 def extract_anime_id(url):
     """
-    Extracts the Anime ID from the provided URL and determines the domain of
-    the host page.
+    Extracts the Anime ID from a given URL.
 
     Args:
         url (str): The URL of the anime page.
 
     Returns:
-        tuple: A tuple containing the Anime ID and domain.
+        str: The extracted Anime ID from the URL.
 
     Raises:
-        ValueError: If the URL format is invalid.
+        ValueError: If the URL format is invalid or the Anime ID cannot be
+                    extracted.
     """
     try:
         parsed_url = urlparse(url)
@@ -95,7 +95,8 @@ def extract_anime_name(soup):
 
 def format_anime_name(anime_name):
     """
-    Formats the anime name by removing specific substrings at the end.
+    Formats the anime name by removing specific substrings that may appear
+    at the end.
 
     Args:
         anime_name (str): The anime name extracted from the page.
@@ -107,6 +108,16 @@ def format_anime_name(anime_name):
         ValueError: If the anime name format is invalid.
     """
     def remove_substrings_at_end(string, substrings):
+        """
+        Removes specific substrings from the end of a string.
+
+        Args:
+            string (str): The string from which to remove substrings.
+            substrings (list): A list of substrings to remove from the end.
+
+        Returns:
+            str: The string with any matching substrings removed.
+        """
         for substring in substrings:
             if string.endswith(substring):
                 return string[:-len(substring)].strip()
