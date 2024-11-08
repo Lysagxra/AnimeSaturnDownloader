@@ -7,11 +7,12 @@ URLs, and downloads each episode.
 Usage:
     - Run the script with the URL of the anime page as a command-line argument.
     - It will create a directory structure in the 'Downloads' folder based on
-      the anime name where each episode will be downloaded.
+      the anime name, where each episode will be downloaded.
 """
 
 import os
 import sys
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -43,6 +44,9 @@ def get_episode_urls(soup, match, watch_url=False):
     Args:
         soup (BeautifulSoup): The BeautifulSoup object containing the HTML.
         match (str): The string to match within the attribute.
+        watch_url (bool, optional): If True, returns the first matching URL; 
+                                    otherwise, returns a list of URLs.
+                                    Defaults to False.
 
     Returns:
         str or list: The first matching URL if watch_url is True,
@@ -127,11 +131,13 @@ def get_episode_file_name(episode_download_link):
         str: The extracted file name, or None if the link is None or empty.
     """
     if episode_download_link:
-        try:
-            return episode_download_link.split('/')[-1]
+        parsed_url = urlparse(episode_download_link)
+        return os.path.basename(parsed_url.path)
+#        try:
+#            return episode_download_link.split('/')[-1]
 
-        except IndexError as indx_err:
-            print(f"Error while extracting the file name: {indx_err}")
+#        except IndexError as indx_err:
+#            print(f"Error while extracting the file name: {indx_err}")
 
     return None
 
@@ -147,8 +153,8 @@ def download_episode(
         download_path (str): The directory path where the episode file will
                              be saved.
         task_info (tuple): A tuple containing progress tracking information.
-        is_default_host (bool): Indicates whether the default host is being
-                                used. Defaults to True.
+        is_default_host (bool, optional): Indicates whether the default host is
+                                          being used. Defaults to True.
 
     Raises:
         requests.RequestException: If there is an error with the HTTP request,
@@ -273,11 +279,6 @@ def download_anime(anime_name, video_urls, download_path):
                            downloaded.
         download_path (str): The local directory path where the downloaded
                              episodes will be saved.
-
-    Usage:
-        This function initializes a progress bar to display the download
-        status of each episode and updates the overall progress as episodes
-        are downloaded.
     """
     job_progress = create_progress_bar()
     progress_table = create_progress_table(anime_name, job_progress)
