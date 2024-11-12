@@ -59,7 +59,7 @@ Run the script followed by the anime URL you want to download:
 python3 anime_downloader.py <anime_url>
 ```
 
-Example
+### Example
 
 ```bash
 python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan
