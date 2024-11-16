@@ -1,42 +1,22 @@
 """
-This module provides functionality to read URLs from a file, process
-them for downloading Anime content, and write results back to the file.
+This module provides functionality for reading URLs from a file, processing
+them to download anime content, and clearing the file after the process is
+complete.
 
 Usage:
-    To use this module, ensure that 'URLs.txt' is present in the same
-    directory as this script. Execute the script to read URLs, download
-    content, and clear the URL list upon completion.
+    Ensure that a file named 'URLs.txt' is present in the same directory as
+    this script. The file should contain a list of URLs, one per line. When
+    executed, the script will:
+        1. Read the URLs from 'URLs.txt'.
+        2. Process each URL for downloading anime content.
+        3. Clear the contents of 'URLs.txt' after all URLs have been processed.
 """
 
-from anime_downloader import process_anime_download, clear_terminal
+from helpers.file_utils import read_file, write_file
+from helpers.general_utils import clear_terminal
+from anime_downloader import process_anime_download
 
 FILE = 'URLs.txt'
-
-def read_file(filename):
-    """
-    Reads the contents of a file and returns a list of its lines.
-
-    Args:
-        filename (str): The path to the file to be read.
-
-    Returns:
-        list: A list of lines from the file, with newline characters removed.
-    """
-    with open(filename, 'r', encoding='utf-8') as file:
-        return file.read().splitlines()
-
-def write_file(filename, content=''):
-    """
-    Writes content to a specified file. If content is not provided, the file is
-    cleared.
-
-    Args:
-        filename (str): The path to the file to be written to.
-        content (str, optional): The content to write to the file. Defaults to
-                                 an empty string.
-    """
-    with open(filename, 'w', encoding='utf-8') as file:
-        file.write(content)
 
 def process_urls(urls):
     """
@@ -52,7 +32,8 @@ def main():
     """
     Main function to execute the script.
 
-    Reads URLs from a file, processes them, and clears the file at the end.
+    Reads URLs from a file, processes the downloads for each URL, and clears
+    the file after the processing is complete.
     """
     clear_terminal()
     urls = read_file(FILE)
