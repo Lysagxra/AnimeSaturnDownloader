@@ -54,11 +54,9 @@ def extract_anime_id(url):
     try:
         parsed_url = urlparse(url)
         anime_id = parsed_url.path.split('/')[-1]
-
         if ends_with_pattern(anime_id):
             anime_id = remove_pattern(anime_id)
 
-#        domain = parsed_url.netloc.split('.')[-1]
         return anime_id
 
     except IndexError as indx_err:
@@ -84,7 +82,6 @@ def extract_anime_name(soup):
         container = soup.find(
             'div', {'class': "container anime-title-as mb-3 w-100"}
         )
-
         if container is None:
             raise ValueError("Anime title container not found.")
 

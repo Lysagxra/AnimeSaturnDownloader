@@ -1,10 +1,11 @@
 """
 This module provides utilities for handling file downloads with progress
-tracking.
+tracking and concurrent execution.
 """
 
 from concurrent.futures import ThreadPoolExecutor
 
+MAX_WORKERS = 3
 TASK_COLOR = 'cyan'
 
 KB = 1024
@@ -12,26 +13,26 @@ MB = 1024 * KB
 
 def get_chunk_size(file_size):
     """
-    Determines the optimal chunk size based on the file size.
+    Determines the optimal chunk size for downloading a file based on its size.
 
     Args:
-        file_size (int): The size of the file in bytes.
+        file_size (int): The size of the file to be downloaded, in bytes.
 
     Returns:
-        int: The optimal chunk size in bytes.
+        int: The optimal chunk size in bytes to use for downloading the file.
     """
     thresholds = [
-        (50 * MB, 4 * KB),    # Less than 50 MB
-        (100 * MB, 16 * KB),  # 50 MB to 100 MB
-        (250 * MB, 64 * KB),  # 100 MB to 250 MB
-        (500 * MB, 256 * KB)  # 250 MB to 500 MB
+        (50 * MB, 256 * KB),   # Less than 50 MB
+        (100 * MB, 512 * KB),  # 50 MB to 100 MB
+        (250 * MB, 2 * MB),    # 100 MB to 250 MB
+        (500 * MB, 4 * MB)     # 250 MB to 500 MB
     ]
 
     for threshold, chunk_size in thresholds:
         if file_size < threshold:
             return chunk_size
 
-    return 512 * KB
+    return 8 * MB
 
 def save_file_with_progress(response, final_path, task_info):
     """
@@ -80,7 +81,7 @@ def manage_running_tasks(futures, job_progress):
                 task = futures.pop(future)
                 job_progress.update(task, visible=True)
 
-def run_in_parallel(func, items, job_progress, *args, max_workers=3):
+def run_in_parallel(func, items, job_progress, *args):
     """
     Execute a function in parallel for a list of items, updating progress in a
     job tracker.
@@ -92,13 +93,11 @@ def run_in_parallel(func, items, job_progress, *args, max_workers=3):
         job_progress: An object responsible for managing and displaying the
                       progress of tasks.
         *args: Additional positional arguments to be passed to the `func`.
-        max_workers (int, optional): The maximum number of threads to use for
-                                     concurrent processing. Defaults to 3.
     """
     num_items = len(items)
     futures = {}
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         overall_task = job_progress.add_task(
             f"[{TASK_COLOR}]Progress", total=num_items, visible=True
         )

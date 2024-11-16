@@ -40,11 +40,11 @@ def create_progress_table(title, job_progress):
         title (str): The name of the task for which the progress is being
                      displayed.
         job_progress (Progress): An instance of a progress tracking object that
-                                 manages the download progress.
+                                 manages the download progress of the task.
 
     Returns:
-        Table: A rich Table object containing the progress panel for the
-               specified task.
+        Table: A Rich Table object containing a formatted panel with the
+               progress bar, ready to be displayed in a terminal or console.
     """
     progress_table = Table.grid()
     progress_table.add_row(
