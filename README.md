@@ -84,7 +84,7 @@ To download a specific range of episodes (e.g., episodes 5 to 10):
 python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan --start 5 --end 10
 ```
 
-To download episodes starting from a specific episode
+To download episodes starting from a specific episode:
 ```bash
 python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan --start 5
 ```
