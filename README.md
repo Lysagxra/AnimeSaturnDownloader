@@ -76,17 +76,17 @@ python3 anime_downloader.py <anime_url> [--start <start_episode>] [--end <end_ep
 
 To download all episodes:
 ```bash
-python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan
+python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan-a
 ```
 
 To download a specific range of episodes (e.g., episodes 5 to 10):
 ```bash
-python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan --start 5 --end 10
+python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan-a --start 5 --end 10
 ```
 
 To download episodes starting from a specific episode:
 ```bash
-python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan --start 5
+python3 anime_downloader.py https://www.animesaturn.cx/anime/Dan-Da-Dan-a --start 5
 ```
 In this case, the script will download all episodes starting from the `--start` episode to the last episode.
 
