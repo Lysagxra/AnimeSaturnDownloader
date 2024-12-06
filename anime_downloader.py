@@ -11,7 +11,7 @@ Usage:
 """
 
 import os
-import sys
+import argparse
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -28,8 +28,6 @@ from helpers.format_utils import (
     extract_anime_id, extract_anime_name, format_anime_name
 )
 
-SCRIPT_NAME = os.path.basename(__file__)
-TIMEOUT = 10
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) "
@@ -159,7 +157,7 @@ def download_episode(
     """
     try:
         response = requests.get(
-            download_link, stream=True, headers=HEADERS, timeout=TIMEOUT
+            download_link, stream=True, headers=HEADERS, timeout=10
         )
         response.raise_for_status()
 
@@ -283,12 +281,17 @@ def download_anime(anime_name, video_urls, download_path):
             process_video_url, video_urls, job_progress, download_path
         )
 
-def process_anime_download(url):
+def process_anime_download(url, start_episode=None, end_episode=None):
     """
     Download a series of Anime episodes from the specified URL.
 
     Args:
         url (str): The URL of the Anime series to download.
+        start_episode (int, optional): The starting episode number. Defaults to
+                                       None.
+        end_episode (int, optional): The ending episode number. Defaults to
+                                     None.
+
 
     Raises:
         ValueError: If there is an issue extracting the Anime ID or name
@@ -302,23 +305,49 @@ def process_anime_download(url):
         download_path = create_download_directory(anime_name)
 
         episode_urls = get_episode_urls(soup, anime_id)
+
+        # If start_episode is specified, slice the episode_urls list from the
+        # (start_episode-1) index to the end_episode (if specified) or to the
+        # end of the list (if end_episode is None).
+        if start_episode:
+            episode_urls = episode_urls[start_episode-1:end_episode]
+
         video_urls = get_video_urls(episode_urls)
         download_anime(anime_name, video_urls, download_path)
 
     except ValueError as val_err:
         print(f"Value error: {val_err}")
 
+def setup_parser():
+    """
+    Set up the argument parser for the anime download script.
+
+    Returns:
+        argparse.ArgumentParser: The configured argument parser instance.
+    """
+    parser = argparse.ArgumentParser(
+        description="Download anime episodes from a given URL."
+    )
+    parser.add_argument('url', help="The URL of the Anime series to download.")
+    parser.add_argument(
+        '--start', type=int, default=None, help="The starting episode number."
+    )
+    parser.add_argument(
+        '--end', type=int, default=None, help="The ending episode number."
+    )
+    return parser
+
 def main():
     """
     Main function to download anime episodes from a given AnimeSaturn URL.
     """
-    if len(sys.argv) != 2:
-        print(f"Usage: python3 {SCRIPT_NAME} <anime_url>")
-        sys.exit(1)
+    parser = setup_parser()
+    args = parser.parse_args()
 
     clear_terminal()
-    url = sys.argv[1]
-    process_anime_download(url)
+    process_anime_download(
+        args.url, start_episode=args.start, end_episode=args.end
+    )
 
 if __name__ == '__main__':
     main()
