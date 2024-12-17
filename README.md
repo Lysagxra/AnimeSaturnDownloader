@@ -96,6 +96,17 @@ In this case, the script will download all episodes starting from the `--start` 
 
 1. Create a `URLs.txt` file in the project root and list the anime URLs you want to download.
 
+- Example of `URLs.txt`:
+
+```
+https://www.animesaturn.cx/anime/Dan-Da-Dan-a
+https://www.animesaturn.cx/anime/Chainsaw-Man
+https://www.animesaturn.cx/anime/Bleach
+```
+
+- Ensure that each URL is on its own line without any extra spaces.
+- You can add as many URLs as you need, following the same format.
+
 2. Run the main script via the command line:
 
 ```bash
